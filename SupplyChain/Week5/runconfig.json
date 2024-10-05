@@ -1,0 +1,15 @@
+{
+"run_name": "Running notebooks",
+"new_cluster": {
+"spark_version": "10.4.x-scala2.12",
+"node_type_id": "Standard_DS3_v2",
+"num_workers": 4
+},
+"notebook_task": {
+"notebook_path": "/Shared/Data_ingestion",
+"base_parameters": {
+"param1": "value1",
+"param2": "value2"
+}
+}
+}

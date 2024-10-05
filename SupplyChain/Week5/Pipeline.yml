@@ -1,0 +1,53 @@
+PIPELINE :
+
+STEP 1 : SET UP DATABRICKS CLI
+pip install databricks-cli
+
+STEP 2: CREATE AN AZURE DEVOPS PIPELINE
+databricks configure –token
+
+STEP 3: AZURE DEVOPS YAML PIPELINE
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  DATABRICKS_HOST: 'https://<databricks-instance>.azuredatabricks.net'
+  DATABRICKS_TOKEN: $(databricksToken)
+
+steps:
+# Step 1: Install Python and Databricks CLI
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.x'
+    addToPath: true
+
+- script: |
+    pip install databricks-cli
+  displayName: 'Installing Databricks CLI..'
+
+# Step 2: Configure Databricks CLI
+- script: |
+    databricks configure --host $(DATABRICKS_HOST) --token $(DATABRICKS_TOKEN)
+  displayName: ‘Databricks CLI configured'
+  env:
+    DATABRICKS_HOST: $(DATABRICKS_HOST)
+    DATABRICKS_TOKEN: $(DATABRICKS_TOKEN)
+
+# Step 3: Upload Notebook to Databricks Workspace
+- script: |
+    databricks workspace import ./notebooks/data_cleaning.py /Shared//Data_ingestion -l PYTHON
+    databricks workspace import ./notebooks/data_transformation.py /Shared/Data_manipulation -l PYTHON
+  displayName: ' Notebooks successfully uploaded to Workspace'
+
+# Step 4: Run Databricks Notebook
+- script: |
+    JOB_ID=$(databricks runs submit --json-file run_config.json | jq -r '.run_id')
+    echo "Job ID: $JOB_ID"
+    databricks runs wait --run-id $JOB_ID
+    JOB_ID_2=$(databricks runs submit --json-file run_config_notebook2.json | jq -r '.run_id')
+    echo "Notebook 2 Job ID: $JOB_ID_2" 
+    databricks runs wait --run-id $JOB_ID_2
+  displayName: ‘Notebooks ran successfully'
